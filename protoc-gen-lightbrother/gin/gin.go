@@ -105,6 +105,7 @@ func (g *gin) generateService(file *generator.FileDescriptor) {
 		g.P()
 		g.generateHandleFunc(file, serv)
 		g.generateRegister(file, serv, i)
+		g.generateHelperFunc()
 	}
 }
 
@@ -146,7 +147,7 @@ func (g *gin) generateHandleFunc(file *generator.FileDescriptor, service *pb.Ser
 		g.P("\t}")
 		g.P(fmt.Sprintf("\tresp, err := %s%sSvc.%s(ctx, p)", packageName, servName, generator.CamelCase(method.GetName())))
 		g.P("\tif err!= nil {")
-		g.P("\t\tc.JSON(http.StatusInternalServerError, err)")
+		g.P("\t\tc.JSON(http.StatusOK, getResponse(constant.StatusInternalServerError, err.Error(), nil))")
 		g.P("\t}")
 		g.P("\tc.JSON(http.StatusOK, resp)")
 		g.P("}")
@@ -253,4 +254,14 @@ func (g *gin) getMethodRoute(serviceName, methodName string) string {
 		return strings.ToUpper(routeMethod)
 	}
 	return "GET"
+}
+
+func (g *gin) generateHelperFunc() {
+	g.P("// 返回数据格式化")
+	g.P("func getResponse(code int, message string, data interface{}) gin.H {")
+	g.P("\tresponseData[\"code\"] = code")
+	g.P("\tresponseData[\"message\"] = message")
+	g.P("\tresponseData[\"data\"] = data")
+	g.P("\treturn responseData")
+	g.P("}")
 }
