@@ -33,7 +33,7 @@ syntax = "proto2";
 
 package goproto.test.import_public.sub;
 
-option go_package = "github.com/golang/protobuf/protoc-gen-go/testdata/import_public/sub";
+option go_package = "github.com/lightbrotherV/gin-protobuf/protoc-gen-go/testdata/import_public/sub";
 
 message M2 {
   extensions 1 to max;

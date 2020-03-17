@@ -35,9 +35,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-	pb "github.com/golang/protobuf/proto/proto3_proto"
-	tpb "github.com/golang/protobuf/proto/test_proto"
+	"github.com/lightbrotherV/gin-protobuf/proto"
+	pb "github.com/lightbrotherV/gin-protobuf/proto/proto3_proto"
+	tpb "github.com/lightbrotherV/gin-protobuf/proto/test_proto"
 )
 
 func TestProto3ZeroValues(t *testing.T) {

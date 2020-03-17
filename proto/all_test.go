@@ -45,11 +45,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-	. "github.com/golang/protobuf/proto"
-	pb3 "github.com/golang/protobuf/proto/proto3_proto"
-	. "github.com/golang/protobuf/proto/test_proto"
-	descriptorpb "github.com/golang/protobuf/protoc-gen-lightbrother/descriptor"
+	"github.com/lightbrotherV/gin-protobuf/jsonpb"
+	. "github.com/lightbrotherV/gin-protobuf/proto"
+	pb3 "github.com/lightbrotherV/gin-protobuf/proto/proto3_proto"
+	. "github.com/lightbrotherV/gin-protobuf/proto/test_proto"
+	descriptorpb "github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother/descriptor"
 )
 
 var globalO *Buffer
@@ -2192,7 +2192,7 @@ func TestOneofNilBytes(t *testing.T) {
 }
 
 func TestInefficientPackedBool(t *testing.T) {
-	// https://github.com/golang/protobuf/issues/76
+	// https://github.com/lightbrotherV/gin-protobuf/issues/76
 	inp := []byte{
 		0x12, 0x02, // 0x12 = 2<<3|2; 2 bytes
 		// Usually a bool should take a single byte,

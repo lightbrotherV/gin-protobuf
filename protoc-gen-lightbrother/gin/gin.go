@@ -3,9 +3,9 @@ package gin
 import (
 	"bytes"
 	"fmt"
-	pb "github.com/golang/protobuf/protoc-gen-lightbrother/descriptor"
-	"github.com/golang/protobuf/protoc-gen-lightbrother/generator"
-	plugin_go "github.com/golang/protobuf/protoc-gen-lightbrother/plugin"
+	pb "github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother/descriptor"
+	"github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother/generator"
+	plugin_go "github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother/plugin"
 	"path"
 	"strconv"
 	"strings"

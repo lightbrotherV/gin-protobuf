@@ -57,11 +57,11 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-lightbrother/generator/internal/remap"
+	"github.com/lightbrotherV/gin-protobuf/proto"
+	"github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother/generator/internal/remap"
 
-	"github.com/golang/protobuf/protoc-gen-lightbrother/descriptor"
-	plugin "github.com/golang/protobuf/protoc-gen-lightbrother/plugin"
+	"github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother/descriptor"
+	plugin "github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother/plugin"
 )
 
 // generatedCodeVersion indicates a version of the generated code.
@@ -1318,7 +1318,7 @@ func (g *Generator) generateImports() {
 	g.P("import (")
 	g.P(g.Pkg["fmt"] + ` "fmt"`)
 	g.P(g.Pkg["math"] + ` "math"`)
-	g.P(g.Pkg["proto"]+" ", GoImportPath(g.ImportPrefix)+"github.com/golang/protobuf/proto")
+	g.P(g.Pkg["proto"]+" ", GoImportPath(g.ImportPrefix)+"github.com/lightbrotherV/gin-protobuf/proto")
 	for importPath, packageName := range imports {
 		g.P(packageName, " ", GoImportPath(g.ImportPrefix)+importPath)
 	}

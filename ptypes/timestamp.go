@@ -38,7 +38,7 @@ import (
 	"fmt"
 	"time"
 
-	tspb "github.com/golang/protobuf/ptypes/timestamp"
+	tspb "github.com/lightbrotherV/gin-protobuf/ptypes/timestamp"
 )
 
 const (

@@ -11,7 +11,7 @@ go:
 
 install:
   - go get -v -d google.golang.org/grpc
-  - go get -v -d -t github.com/golang/protobuf/...
+  - go get -v -d -t github.com/lightbrotherV/gin-protobuf/...
   - curl -L https://github.com/google/protobuf/releases/download/v3.11.4/protoc-3.11.4-linux-x86_64.zip -o /tmp/protoc.zip
   - unzip /tmp/protoc.zip -d "$HOME"/protoc
   - mkdir -p "$HOME"/src && ln -s "$HOME"/protoc "$HOME"/src/protobuf

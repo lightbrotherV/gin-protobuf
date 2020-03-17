@@ -31,4 +31,4 @@
 
 package main
 
-import _ "github.com/golang/protobuf/protoc-gen-lightbrother/grpc"
+import _ "github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother/grpc"

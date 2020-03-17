@@ -33,7 +33,7 @@ syntax = "proto2";
 
 package extension_extra;
 
-option go_package = "github.com/golang/protobuf/protoc-gen-go/testdata/extension_extra";
+option go_package = "github.com/lightbrotherV/gin-protobuf/protoc-gen-go/testdata/extension_extra";
 
 message ExtraMessage {
   optional int32 width = 1;

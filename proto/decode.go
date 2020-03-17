@@ -358,7 +358,7 @@ func UnmarshalMerge(buf []byte, pb Message) error {
 		// Some implementations do, most do not.
 		// Thus, calling this here may or may not do what people want.
 		//
-		// See https://github.com/golang/protobuf/issues/424
+		// See https://github.com/lightbrotherV/gin-protobuf/issues/424
 		return u.Unmarshal(buf)
 	}
 	return NewBuffer(buf).Unmarshal(pb)
@@ -406,7 +406,7 @@ func (p *Buffer) Unmarshal(pb Message) error {
 		// Some implementations do, most do not.
 		// Thus, calling this here may or may not do what people want.
 		//
-		// See https://github.com/golang/protobuf/issues/424
+		// See https://github.com/lightbrotherV/gin-protobuf/issues/424
 		err := u.Unmarshal(p.buf[p.index:])
 		p.index = len(p.buf)
 		return err

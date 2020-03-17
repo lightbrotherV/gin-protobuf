@@ -14,10 +14,10 @@ It has these top-level messages:
 */
 package plugin_go
 
-import proto "github.com/golang/protobuf/proto"
+import proto "github.com/lightbrotherV/gin-protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/protoc-gen-lightbrother/descriptor"
+import google_protobuf "github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother/descriptor"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal

@@ -39,8 +39,8 @@ import (
 	"strconv"
 	"strings"
 
-	pb "github.com/golang/protobuf/protoc-gen-lightbrother/descriptor"
-	"github.com/golang/protobuf/protoc-gen-lightbrother/generator"
+	pb "github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother/descriptor"
+	"github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother/generator"
 )
 
 // generatedCodeVersion indicates a version of the generated code.

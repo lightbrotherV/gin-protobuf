@@ -1288,7 +1288,7 @@ func unmarshalBoolValue(b []byte, f pointer, w int) ([]byte, error) {
 	}
 	// Note: any length varint is allowed, even though any sane
 	// encoder will use one byte.
-	// See https://github.com/golang/protobuf/issues/76
+	// See https://github.com/lightbrotherV/gin-protobuf/issues/76
 	x, n := decodeVarint(b)
 	if n == 0 {
 		return nil, io.ErrUnexpectedEOF

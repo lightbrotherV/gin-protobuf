@@ -40,11 +40,11 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
+	"github.com/lightbrotherV/gin-protobuf/proto"
 
-	proto3pb "github.com/golang/protobuf/proto/proto3_proto"
-	pb "github.com/golang/protobuf/proto/test_proto"
-	anypb "github.com/golang/protobuf/ptypes/any"
+	proto3pb "github.com/lightbrotherV/gin-protobuf/proto/proto3_proto"
+	pb "github.com/lightbrotherV/gin-protobuf/proto/test_proto"
+	anypb "github.com/lightbrotherV/gin-protobuf/ptypes/any"
 )
 
 // textMessage implements the methods that allow it to marshal and unmarshal

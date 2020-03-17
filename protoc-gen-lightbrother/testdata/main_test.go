@@ -36,9 +36,9 @@ package testdata
 import (
 	"testing"
 
-	importspb "github.com/golang/protobuf/protoc-gen-lightbrother/testdata/imports"
-	multipb "github.com/golang/protobuf/protoc-gen-lightbrother/testdata/multi"
-	mytestpb "github.com/golang/protobuf/protoc-gen-lightbrother/testdata/my_test"
+	importspb "github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother/testdata/imports"
+	multipb "github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother/testdata/multi"
+	mytestpb "github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother/testdata/my_test"
 )
 
 func TestLink(t *testing.T) {

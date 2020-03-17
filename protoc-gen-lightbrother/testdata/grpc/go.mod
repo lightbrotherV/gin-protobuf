@@ -1,4 +1,4 @@
-module github.com/golang/protobuf/protoc-gen-go/testdata/grpc
+module github.com/lightbrotherV/gin-protobuf/protoc-gen-go/testdata/grpc
 
 go 1.9
 

@@ -5,7 +5,7 @@ package test_proto
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
+	proto "github.com/lightbrotherV/gin-protobuf/proto"
 	math "math"
 )
 
