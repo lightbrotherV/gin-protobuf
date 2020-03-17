@@ -43,7 +43,7 @@ import (
 	"io/ioutil"
 
 	"github.com/golang/protobuf/proto"
-	protobuf "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	protobuf "github.com/golang/protobuf/protoc-gen-lightbrother/descriptor"
 )
 
 // extractFile extracts a FileDescriptorProto from a gzip'd buffer.

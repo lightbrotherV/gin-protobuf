@@ -49,7 +49,7 @@ import (
 	. "github.com/golang/protobuf/proto"
 	pb3 "github.com/golang/protobuf/proto/proto3_proto"
 	. "github.com/golang/protobuf/proto/test_proto"
-	descriptorpb "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	descriptorpb "github.com/golang/protobuf/protoc-gen-lightbrother/descriptor"
 )
 
 var globalO *Buffer

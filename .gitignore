@@ -15,3 +15,9 @@ _testmain.go
 
 # Conformance test output and transient files.
 conformance/failing_tests.txt
+
+# my ignore
+example.proto
+example.pb.go
+example.gin.go
+.idea/

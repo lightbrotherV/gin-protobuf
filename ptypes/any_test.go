@@ -35,7 +35,7 @@ import (
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	pb "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	pb "github.com/golang/protobuf/protoc-gen-lightbrother/descriptor"
 	"github.com/golang/protobuf/ptypes/any"
 )
 
