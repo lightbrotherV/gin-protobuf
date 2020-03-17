@@ -1,4 +1,4 @@
-module github.com/golang/protobuf
+module github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother
 
 go 1.12
 
