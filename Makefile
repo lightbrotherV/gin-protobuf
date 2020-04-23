@@ -32,12 +32,12 @@
 all:	install
 
 install:
-	go install ./proto ./jsonpb ./ptypes ./protoc-gen-go
+	go install ./proto ./jsonpb ./ptypes ./protoc-gen-lightbrother
 
 test:
-	go test ./... ./protoc-gen-go/testdata
-	go test -tags purego ./... ./protoc-gen-go/testdata
-	cd protoc-gen-go/testdata/grpc && go build grpc.pb.go
+	go test ./... ./protoc-gen-lightbrother/testdata
+	go test -tags purego ./... ./protoc-gen-lightbrother/testdata
+	cd protoc-gen-lightbrother/testdata/grpc && go build grpc.pb.go
 
 clean:
 	go clean ./...
