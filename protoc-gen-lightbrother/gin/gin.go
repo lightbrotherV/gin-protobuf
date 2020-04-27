@@ -25,6 +25,8 @@ type gin struct {
 	gen                 *generator.Generator
 	serviceMethodRoutes map[string]string
 	*bytes.Buffer
+	methodMiddleware map[string][]string // 每个方法拥有的中间件
+	middlewarePool   []string            // 中间件池
 }
 
 func (g *gin) Name() string {
@@ -35,6 +37,7 @@ func (g *gin) Init(gen *generator.Generator) {
 	g.gen = gen
 	g.Buffer = new(bytes.Buffer)
 	g.serviceMethodRoutes = make(map[string]string)
+	g.methodMiddleware = make(map[string][]string)
 }
 
 func (g *gin) Generate(file *generator.FileDescriptor) {
@@ -95,7 +98,7 @@ func (g *gin) generateService(file *generator.FileDescriptor) {
 		g.P(fmt.Sprintf("// %sGinServer is the server API for %s service.", servName, servName))
 		comments := file.Comments[servCommentsPath].GetLeadingComments()
 		g.printComments(comments, "")
-		g.setServiceMethodRoutes(serv.GetName(), comments)
+		g.setServiceMethodComment(serv.GetName(), comments)
 		g.P(fmt.Sprintf("type %sGinServer interface {", servName))
 		g.generateInterfaceProperties(file, serv, i)
 		g.P("}")
@@ -123,14 +126,17 @@ func (g *gin) generateServiceRoute(file *generator.FileDescriptor) {
 func (g *gin) generateInterfaceProperties(file *generator.FileDescriptor, service *pb.ServiceDescriptorProto, index int) {
 	methods := service.GetMethod()
 	serviceName := service.GetName()
+	servicesLen := len(methods)
 	for i, method := range methods {
 		methodCommentsPath := fmt.Sprintf("6,%d,2,%d", index, i)
 		comments := file.Comments[methodCommentsPath].GetLeadingComments()
 		g.printComments(comments, "\t")
-		g.setServiceMethodRoutes(fmt.Sprintf("%s:%s", serviceName, method.GetName()), comments)
+		g.setServiceMethodComment(g.getMethodServiceKey(serviceName, method.GetName()), comments)
 		methodName := generator.CamelCase(method.GetName())
 		g.P(fmt.Sprintf("\t%s(ctx context.Context, req *%s) (resp *%s, err error)", methodName, g.gen.TypeName(g.objectNamed(method.GetInputType())), g.gen.TypeName(g.objectNamed(method.GetOutputType()))))
-		g.P()
+		if i != servicesLen-1 {
+			g.P()
+		}
 	}
 }
 
@@ -141,11 +147,11 @@ func (g *gin) generateHandleFunc(file *generator.FileDescriptor, service *pb.Ser
 	for _, method := range methods {
 		g.P(fmt.Sprintf("func %s(c *gin.Context) {", method.GetName()))
 		g.P(fmt.Sprintf("\tp := new(%s)", g.gen.TypeName(g.objectNamed(method.GetOutputType()))))
-		g.P("\tif err := c.BindJSON(p); err!= nil {")
+		g.P("\tif err := c.BindJSON(p); err != nil {")
 		g.P("\t\tc.JSON(http.StatusInternalServerError, err)")
 		g.P("\t}")
 		g.P(fmt.Sprintf("\tresp, err := %s%sSvc.%s(c, p)", packageName, servName, generator.CamelCase(method.GetName())))
-		g.P("\tif err!= nil {")
+		g.P("\tif err != nil {")
 		g.P("\t\tc.JSON(http.StatusOK, getResponse(c, nil))")
 		g.P("\t}")
 		g.P("\tc.JSON(http.StatusOK, getResponse(c, resp))")
@@ -159,13 +165,16 @@ func (g *gin) generateRegister(file *generator.FileDescriptor, service *pb.Servi
 	servName := generator.CamelCase(originServiceName)
 	methods := service.GetMethod()
 	packageName := file.PackageName
+	g.genterateMiddleware()
+	g.P("const HTTP_METGOD = \"GRPC\"")
+	g.P()
 	g.P(fmt.Sprintf("func Register%sGinServer(e *gin.Engine, server %sGinServer) {", servName, servName))
 	g.P(fmt.Sprintf("\t%s%sSvc = server", packageName, servName))
 	for _, method := range methods {
-		routeMethod := g.getMethodRoute(originServiceName, method.GetName())
-		g.P(fmt.Sprintf("\te.%s(%s, %s)", routeMethod, g.getRouteVariable(service, method), method.GetName()))
+		g.P(fmt.Sprintf("\te.Handle(HTTP_METGOD, %s, %s, %s)", g.getRouteVariable(service, method), g.getMethodMiddleware(service, method), method.GetName()))
 	}
 	g.P("}")
+	g.P()
 }
 
 // 获取路由变量名
@@ -234,33 +243,139 @@ func (g *gin) objectNamed(name string) generator.Object {
 	return g.gen.ObjectNamed(name)
 }
 
-// 从注释中提取记录服务http请求方法
-func (g *gin) setServiceMethodRoutes(serviceName, comments string) {
+// 从注释中提取记录服务各类参数
+func (g *gin) setServiceMethodComment(serviceName, comments string) {
 	tags := GetTagsInComment(comments)
-	method := GetTagValue("method", tags)
-	if method != "" {
-		g.serviceMethodRoutes[serviceName] = method
-	}
-}
+	middlewareStr := GetTagValue("middleware", tags)
+	// 中间件
+	middlewareArr := strings.Split(middlewareStr, ",")
+	for _, middleware := range middlewareArr {
+		if middleware == "" {
+			continue
+		}
+		// 加入中间件池
+		g.middlewarePool = append(g.middlewarePool, middleware)
 
-// 获取http的请求方式
-func (g *gin) getMethodRoute(serviceName, methodName string) string {
-	methodKey := fmt.Sprintf("%s:%s", serviceName, methodName)
-	if routeMethod, ok := g.serviceMethodRoutes[methodKey]; ok {
-		return strings.ToUpper(routeMethod)
+		// 加入对应的方法
+		g.methodMiddleware[serviceName] = append(g.methodMiddleware[serviceName], middleware)
 	}
-	if routeMethod, ok := g.serviceMethodRoutes[serviceName]; ok {
-		return strings.ToUpper(routeMethod)
-	}
-	return "GET"
 }
 
 func (g *gin) generateHelperFunc() {
 	g.P("// 返回数据格式化")
 	g.P("func getResponse(c *gin.Context, data interface{}) gin.H {")
+	g.P("\tcode, ok := c.Get(\"code\")")
+	g.P("\tif !ok {")
+	g.P("\t\tcode = 0")
+	g.P("\t}")
+	g.P("\tmsg, ok := c.Get(\"message\")")
+	g.P("\tif !ok {")
+	g.P("\t\tmsg = \"\"")
+	g.P("\t}")
 	g.P("\tresponseData[\"code\"] = code")
-	g.P("\tresponseData[\"message\"] = message")
+	g.P("\tresponseData[\"message\"] = msg")
 	g.P("\tresponseData[\"data\"] = data")
 	g.P("\treturn responseData")
 	g.P("}")
+}
+
+// 中间件
+func (g *gin) genterateMiddleware() {
+	if len(g.middlewarePool) > 0 {
+		// 变量
+		g.P("var (")
+		for _, middlewareStr := range g.middlewarePool {
+			g.P(fmt.Sprintf("\t%sMiddleware []gin.HandlerFunc", middlewareStr))
+
+		}
+		g.P(")")
+		g.P()
+
+		// 对外暴露注册函数
+		for _, middlewareStr := range g.middlewarePool {
+			g.P(fmt.Sprintf("func Register%sMiddleware(f gin.HandlerFunc) {", strings.Title(middlewareStr)))
+			g.P(fmt.Sprintf("\t%sMiddleware = append(%sMiddleware, f)", middlewareStr, middlewareStr))
+			g.P("}")
+			g.P()
+		}
+
+		// 调用注册的函数
+		for _, middlewareStr := range g.middlewarePool {
+			g.P(fmt.Sprintf("func handle%sMiddleware(c *gin.Context) {", strings.Title(middlewareStr)))
+			g.P(fmt.Sprintf("\tfor _, middleware := range %sMiddleware {", middlewareStr))
+			g.P("\t\tif c.IsAborted() {")
+			g.P("\t\t\tbreak")
+			g.P("\t\t}")
+			g.P("\t\tmiddleware(c)")
+			g.P("\t}")
+			g.P("}")
+			g.P()
+		}
+
+	}
+}
+
+func (g *gin) getMethodMiddleware(serv *pb.ServiceDescriptorProto, method *pb.MethodDescriptorProto) string {
+	servName := serv.GetName()
+	methodName := method.GetName()
+	methodMiddlewareArr := make([]string, 0)
+	methodServiceMiddlewareArr, ok := g.methodMiddleware[servName]
+	setArr := make([]string, 0)
+	result := make([]string, 0)
+	if ok {
+		for _, methodServiceMiddleware := range methodServiceMiddlewareArr {
+			setArr = append(setArr, methodServiceMiddleware)
+		}
+	}
+
+	methodMiddlewareKey := g.getMethodServiceKey(servName, methodName)
+
+	methodMiddlewareArr, ok = g.methodMiddleware[methodMiddlewareKey]
+	if ok {
+		for _, methodMiddleware := range methodMiddlewareArr {
+			setArr = append(setArr, methodMiddleware)
+		}
+	}
+
+	setArr = RemoveRepeatedElement(setArr)
+
+	for _, methodMiddleware := range setArr {
+		result = append(result, fmt.Sprintf("handle%sMiddleware", strings.Title(methodMiddleware)))
+	}
+
+	return strings.Join(result, ", ")
+}
+
+func (g *gin) getMethodServiceKey(servName, methodName string) string {
+	return fmt.Sprintf("%s:%s", servName, methodName)
+}
+
+// 稳定去除数组内相同的元素（set化）
+func RemoveRepeatedElement(arr []string) []string {
+	noRepeatArr := make([]string, 0)
+	reverseArr := make([]string, 0)
+	noRepeatReverseArr := make([]string, 0)
+	arrLen := len(arr)
+	for i := arrLen - 1; i >= 0; i-- {
+		reverseArr = append(reverseArr, arr[i])
+	}
+
+	for i := 0; i < len(reverseArr); i++ {
+		repeat := false
+		for j := i + 1; j < len(reverseArr); j++ {
+			if reverseArr[i] == reverseArr[j] {
+				repeat = true
+				break
+			}
+		}
+		if !repeat {
+			noRepeatArr = append(noRepeatArr, reverseArr[i])
+		}
+	}
+
+	reverseArrLen := len(reverseArr)
+	for i := reverseArrLen - 1; i >= 0; i-- {
+		noRepeatReverseArr = append(noRepeatReverseArr, reverseArr[i])
+	}
+	return noRepeatReverseArr
 }

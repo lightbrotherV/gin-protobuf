@@ -31,9 +31,32 @@ information about protocol buffers themselves, see
     // 同时生成grpc
     protoc --lightbrother_out=plugins=grpc+gin:. *.proto
 ```
-#### 指定http请求方法
-需要指定请求方法的service或者rpc上方添加，
+#### 使用中间件
+- 申明
+
+    可以在service或者rpc上方添加，多个中间件用逗号","分割。
+    中间件调用时分先后, 先调用service上的中间件，再调用rpc的，申明多个中间件，按照申明先后排序调用。
+``` golang
+    // `middleware:"auth,cors"`
 ```
-//`method:"post"`
+
+- 注册中间处理函数处理函数
+
+    对于每个中间件，插件会生成对应的注册函数，函数名为Register<中间名>Middleware，对于上方例子，则会生成如下注册函数:
+```golang
+    func RegisterAuthMiddleware(f gin.HandlerFunc);
+    func RegisterCorsMiddleware(f gin.HandlerFunc);
 ```
-表示指定为post方法，默认为get方法，如果service和rpc上方都指定了不同的方法，则优先使用rpc的
+
+#### 返回结果
+通过gin框架的上下文gin.Context的Get,Set方法来传递参数。
+返回结构为：
+```
+{
+    code: 0,
+    message: "",
+    data: {}
+}
+```
+
+data为grpc的返回结构体，code为接口返回码，默认为0，message为错误信息,默认为空字符串。
