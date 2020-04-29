@@ -171,7 +171,12 @@ func (g *gin) generateRegister(file *generator.FileDescriptor, service *pb.Servi
 	g.P(fmt.Sprintf("func Register%sGinServer(e *gin.Engine, server %sGinServer) {", servName, servName))
 	g.P(fmt.Sprintf("\t%s%sSvc = server", packageName, servName))
 	for _, method := range methods {
-		g.P(fmt.Sprintf("\te.Handle(HTTP_METGOD, %s, %s, %s)", g.getRouteVariable(service, method), g.getMethodMiddleware(service, method), method.GetName()))
+		methodMiddleware := g.getMethodMiddleware(service, method)
+		if methodMiddleware != "" {
+			g.P(fmt.Sprintf("\te.Handle(HTTP_METGOD, %s, %s, %s)", g.getRouteVariable(service, method), methodMiddleware, method.GetName()))
+		} else {
+			g.P(fmt.Sprintf("\te.Handle(HTTP_METGOD, %s, %s)", g.getRouteVariable(service, method), method.GetName()))
+		}
 	}
 	g.P("}")
 	g.P()

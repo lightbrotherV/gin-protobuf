@@ -123,7 +123,7 @@ func (a *apidoc) GenerateMethod(file *generator.FileDescriptor) {
 				if isRequired(field.GetLabel()) {
 					require = "是"
 				}
-				result.WriteString(fmt.Sprintf("|%s|%s|%s|%s|\n",field.GetName(), require, getParamType(field.GetType()), a.messageType[methodInput].FelidComment[field.GetName()]))
+				result.WriteString(fmt.Sprintf("|%s|%s|%s|%s|\n",field.GetJsonName(), require, getParamType(field.GetType()), a.messageType[methodInput].FelidComment[field.GetName()]))
 			}
 			a.P(result.String())
 			a.P()
@@ -151,11 +151,11 @@ func (a *apidoc) exampleJsonForMsg(messageDescriptor *DescriptorProto, indent in
 	buf.WriteString("{\n")
 	felids := messageDescriptor.GetField()
 	for _, felid := range felids {
-		buf.WriteString(fmt.Sprintf("%s//%s\n", strings.Repeat(" ", indent+4),messageDescriptor.FelidComment[felid.GetName()]))
+		buf.WriteString(fmt.Sprintf("%s//%s\n", strings.Repeat(" ", indent+4),messageDescriptor.FelidComment[felid.GetJsonName()]))
 		if isRepeated(felid.GetLabel()) {
-			buf.WriteString(fmt.Sprintf("%s\"%s\": [\n", strings.Repeat(" ", indent+4), felid.GetName()))
+			buf.WriteString(fmt.Sprintf("%s\"%s\": [\n", strings.Repeat(" ", indent+4), felid.GetJsonName()))
 		} else {
-			buf.WriteString(fmt.Sprintf("%s\"%s\": ", strings.Repeat(" ", indent+4), felid.GetName()))
+			buf.WriteString(fmt.Sprintf("%s\"%s\": ", strings.Repeat(" ", indent+4), felid.GetJsonName()))
 		}
 
 		if felid.GetType() == descriptor.FieldDescriptorProto_TYPE_MESSAGE {

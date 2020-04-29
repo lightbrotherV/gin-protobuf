@@ -15,7 +15,7 @@ information about protocol buffers themselves, see
 
 ## 介绍 ##
 
-在原本proto-gen-go的基础上魔改，衍生出proto-gen-lightbrother, 添加了gin插件， 使用gin插件后，会根据proto自动生成对应的gin路由。
+在原本proto-gen-go的基础上魔改，衍生出proto-gen-lightbrother, 添加了gin插件和apidoc， 使用gin插件后，会根据proto自动生成对应的gin路由；使用apidoc插件后会自动生成proto对应的接口文档。
 
 ## 用法 ##
 
@@ -25,12 +25,20 @@ information about protocol buffers themselves, see
     cd gin-protobuf/protoc-gen-lightbrother
     go install
 ```
-#### 使用
+#### 使用命令
 ```
     protoc --lightbrother_out=plugins=gin:. *.proto
     // 同时生成grpc
     protoc --lightbrother_out=plugins=grpc+gin:. *.proto
+    // 同时生成接口文档
+    protoc --lightbrother_out=plugins=grpc+gin+apidoc:. *.proto
 ```
+#### 使用gin
+使用插件生成gin代码后，使用下方函数即可自动绑定gin路由
+```golang
+    func Register<packageName>GinServer(e *gin.Engine, server <packageName>GinServer)
+```
+
 #### 使用中间件
 - 申明
 
