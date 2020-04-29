@@ -194,7 +194,7 @@ func (g *gin) P(str ...interface{}) {
 
 // 打印注释
 func (g *gin) printComments(comment string, pre string) {
-	comments := GetCommentWithoutTag(comment)
+	comments := generator.GetCommentWithoutTag(comment)
 	for _, line := range comments {
 		g.P(fmt.Sprintf("%s//%s", pre, line))
 	}
@@ -245,8 +245,8 @@ func (g *gin) objectNamed(name string) generator.Object {
 
 // 从注释中提取记录服务各类参数
 func (g *gin) setServiceMethodComment(serviceName, comments string) {
-	tags := GetTagsInComment(comments)
-	middlewareStr := GetTagValue("middleware", tags)
+	tags := generator.GetTagsInComment(comments)
+	middlewareStr := generator.GetTagValue("middleware", tags)
 	// 中间件
 	middlewareArr := strings.Split(middlewareStr, ",")
 	for _, middleware := range middlewareArr {

@@ -20,4 +20,5 @@ conformance/failing_tests.txt
 example.proto
 example.pb.go
 example.gin.go
+example.md
 .idea/
