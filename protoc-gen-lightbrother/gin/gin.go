@@ -7,6 +7,7 @@ import (
 	"github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother/generator"
 	plugin_go "github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother/plugin"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -27,6 +28,7 @@ type gin struct {
 	*bytes.Buffer
 	methodMiddleware map[string][]string // 每个方法拥有的中间件
 	middlewarePool   []string            // 中间件池
+	filename         string
 }
 
 func (g *gin) Name() string {
@@ -46,6 +48,8 @@ func (g *gin) Generate(file *generator.FileDescriptor) {
 	}
 	g.Reset()
 	g.generateHeader(file)
+	fileName := filepath.Base(file.GetName())
+	g.filename = strings.ReplaceAll(fileName, filepath.Ext(fileName), "")
 	name := getFileName(file.GetName())
 	//json, _ := json.Marshal(file)
 	//content := fmt.Sprint(string(json))
@@ -88,6 +92,8 @@ func (g *gin) generateHeader(file *generator.FileDescriptor) {
 	g.P()
 	g.P("// to suppressed 'imported but not used warning'")
 	g.P()
+	g.P("const HTTP_METGOD = \"GRPC\"")
+	g.P()
 }
 
 func (g *gin) generateService(file *generator.FileDescriptor) {
@@ -107,7 +113,7 @@ func (g *gin) generateService(file *generator.FileDescriptor) {
 		g.P(fmt.Sprintf("var %s%sSvc %sGinServer", packageName, servName, servName))
 		g.P()
 		g.generateHandleFunc(file, serv)
-		g.generateRegister(file, serv, i)
+		g.generateRegister(file, serv)
 		g.generateHelperFunc()
 	}
 }
@@ -161,14 +167,12 @@ func (g *gin) generateHandleFunc(file *generator.FileDescriptor, service *pb.Ser
 	}
 }
 
-func (g *gin) generateRegister(file *generator.FileDescriptor, service *pb.ServiceDescriptorProto, index int) {
+func (g *gin) generateRegister(file *generator.FileDescriptor, service *pb.ServiceDescriptorProto) {
 	originServiceName := service.GetName()
 	servName := generator.CamelCase(originServiceName)
 	methods := service.GetMethod()
 	packageName := file.PackageName
-	g.P("const HTTP_METGOD = \"GRPC\"")
-	g.P()
-	g.P(fmt.Sprintf("func Register%sGinServer(e *gin.Engine, server %sGinServer) {", servName, servName))
+	g.P(fmt.Sprintf("func Register%s%sGinServer(e *gin.Engine, server %sGinServer) {", generator.CamelCase(g.filename), servName, servName))
 	g.P(fmt.Sprintf("\t%s%sSvc = server", packageName, servName))
 	for _, method := range methods {
 		methodMiddleware := g.getMethodMiddleware(service, method)
@@ -294,7 +298,8 @@ func (g *gin) genterateMiddleware() {
 		// 变量
 		g.P("var (")
 		for _, middlewareStr := range g.middlewarePool {
-			g.P(fmt.Sprintf("\t%sMiddleware []gin.HandlerFunc", middlewareStr))
+			funcName := fmt.Sprintf("%s%sMiddleware", g.filename, generator.CamelCase(middlewareStr))
+			g.P(fmt.Sprintf("\t%s []gin.HandlerFunc", funcName))
 
 		}
 		g.P(")")
@@ -302,16 +307,18 @@ func (g *gin) genterateMiddleware() {
 
 		// 对外暴露注册函数
 		for _, middlewareStr := range g.middlewarePool {
-			g.P(fmt.Sprintf("func Register%sMiddleware(f gin.HandlerFunc) {", strings.Title(middlewareStr)))
-			g.P(fmt.Sprintf("\t%sMiddleware = append(%sMiddleware, f)", middlewareStr, middlewareStr))
+			funcName := fmt.Sprintf("%s%sMiddleware", g.filename, generator.CamelCase(middlewareStr))
+			g.P(fmt.Sprintf("func Register%s%s(f gin.HandlerFunc) {", generator.CamelCase(g.filename), strings.Title(middlewareStr)))
+			g.P(fmt.Sprintf("\t%s = append(%s, f)", funcName, funcName))
 			g.P("}")
 			g.P()
 		}
 
 		// 调用注册的函数
 		for _, middlewareStr := range g.middlewarePool {
-			g.P(fmt.Sprintf("func handle%sMiddleware(c *gin.Context) {", strings.Title(middlewareStr)))
-			g.P(fmt.Sprintf("\tfor _, middleware := range %sMiddleware {", middlewareStr))
+			g.P(fmt.Sprintf("func handle%s%sMiddleware(c *gin.Context) {", generator.CamelCase(g.filename), strings.Title(middlewareStr)))
+			funcName := fmt.Sprintf("%s%sMiddleware", g.filename, generator.CamelCase(middlewareStr))
+			g.P(fmt.Sprintf("\tfor _, middleware := range %s {", funcName))
 			g.P("\t\tif c.IsAborted() {")
 			g.P("\t\t\tbreak")
 			g.P("\t\t}")
@@ -349,7 +356,7 @@ func (g *gin) getMethodMiddleware(serv *pb.ServiceDescriptorProto, method *pb.Me
 	setArr = RemoveRepeatedElement(setArr)
 
 	for _, methodMiddleware := range setArr {
-		result = append(result, fmt.Sprintf("handle%sMiddleware", strings.Title(methodMiddleware)))
+		result = append(result, fmt.Sprintf("handle%s%sMiddleware", generator.CamelCase(g.filename), strings.Title(methodMiddleware)))
 	}
 
 	return strings.Join(result, ", ")
