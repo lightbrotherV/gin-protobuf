@@ -308,7 +308,7 @@ func (g *gin) genterateMiddleware() {
 		// 对外暴露注册函数
 		for _, middlewareStr := range g.middlewarePool {
 			funcName := fmt.Sprintf("%s%sMiddleware", g.filename, generator.CamelCase(middlewareStr))
-			g.P(fmt.Sprintf("func Register%s%s(f gin.HandlerFunc) {", generator.CamelCase(g.filename), strings.Title(middlewareStr)))
+			g.P(fmt.Sprintf("func Register%s(f gin.HandlerFunc) {", strings.Title(funcName)))
 			g.P(fmt.Sprintf("\t%s = append(%s, f)", funcName, funcName))
 			g.P("}")
 			g.P()
