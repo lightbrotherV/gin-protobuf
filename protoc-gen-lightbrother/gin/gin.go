@@ -51,6 +51,7 @@ func (g *gin) Generate(file *generator.FileDescriptor) {
 	//content := fmt.Sprint(string(json))
 	g.generateServiceRoute(file)
 	g.generateService(file)
+	g.genterateMiddleware()
 	//提取生成的代码
 	content := g.String()
 	ginFile := &plugin_go.CodeGeneratorResponse_File{
@@ -165,7 +166,6 @@ func (g *gin) generateRegister(file *generator.FileDescriptor, service *pb.Servi
 	servName := generator.CamelCase(originServiceName)
 	methods := service.GetMethod()
 	packageName := file.PackageName
-	g.genterateMiddleware()
 	g.P("const HTTP_METGOD = \"GRPC\"")
 	g.P()
 	g.P(fmt.Sprintf("func Register%sGinServer(e *gin.Engine, server %sGinServer) {", servName, servName))
@@ -287,6 +287,10 @@ func (g *gin) generateHelperFunc() {
 // 中间件
 func (g *gin) genterateMiddleware() {
 	if len(g.middlewarePool) > 0 {
+
+		// 去除重复的
+		g.middlewarePool = RemoveRepeatedElement(g.middlewarePool)
+
 		// 变量
 		g.P("var (")
 		for _, middlewareStr := range g.middlewarePool {
@@ -364,7 +368,6 @@ func RemoveRepeatedElement(arr []string) []string {
 	for i := arrLen - 1; i >= 0; i-- {
 		reverseArr = append(reverseArr, arr[i])
 	}
-
 	for i := 0; i < len(reverseArr); i++ {
 		repeat := false
 		for j := i + 1; j < len(reverseArr); j++ {
@@ -377,10 +380,9 @@ func RemoveRepeatedElement(arr []string) []string {
 			noRepeatArr = append(noRepeatArr, reverseArr[i])
 		}
 	}
-
-	reverseArrLen := len(reverseArr)
+	reverseArrLen := len(noRepeatArr)
 	for i := reverseArrLen - 1; i >= 0; i-- {
-		noRepeatReverseArr = append(noRepeatReverseArr, reverseArr[i])
+		noRepeatReverseArr = append(noRepeatReverseArr, noRepeatArr[i])
 	}
 	return noRepeatReverseArr
 }
