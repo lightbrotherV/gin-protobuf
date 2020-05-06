@@ -43,7 +43,8 @@ func (a *apidoc) Generate(file *generator.FileDescriptor) {
 
 	a.GenerateTop(file)
 	a.GenerateMethod(file)
-
+	//json, _ := json.Marshal(a.messageType)
+	//content := fmt.Sprint(string(json))
 	//提取生成的代码
 	content := a.String()
 	ginFile := &plugin_go.CodeGeneratorResponse_File{

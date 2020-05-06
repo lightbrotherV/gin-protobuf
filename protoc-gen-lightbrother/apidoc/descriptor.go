@@ -27,7 +27,7 @@ func NewDescriptorProto(f *generator.FileDescriptor, d *descriptor.DescriptorPro
 	felids := result.GetField()
 	for i, felid := range felids {
 		path := fmt.Sprintf("%s,2,%d", p, i)
-		result.FelidComment[felid.GetName()] = f.GetLineComment(path)
+		result.FelidComment[felid.GetJsonName()] = f.GetLineComment(path)
 	}
 	result.addSubMessage()
 	return result
