@@ -55,6 +55,7 @@ func (g *gin) Generate(file *generator.FileDescriptor) {
 	//content := fmt.Sprint(string(json))
 	g.generateServiceRoute(file)
 	g.generateService(file)
+	g.generateHelperFunc()
 	g.genterateMiddleware()
 	//提取生成的代码
 	content := g.String()
@@ -114,7 +115,6 @@ func (g *gin) generateService(file *generator.FileDescriptor) {
 		g.P()
 		g.generateHandleFunc(file, serv)
 		g.generateRegister(file, serv)
-		g.generateHelperFunc()
 	}
 }
 
@@ -159,6 +159,8 @@ func (g *gin) generateHandleFunc(file *generator.FileDescriptor, service *pb.Ser
 		g.P("\t}")
 		g.P(fmt.Sprintf("\tresp, err := %s%sSvc.%s(c, p)", packageName, servName, generator.CamelCase(method.GetName())))
 		g.P("\tif err != nil {")
+		g.P("\t\tc.Set(\"code\", -500)")
+		g.P("\t\tc.Set(\"message\", err.Error())")
 		g.P("\t\tc.JSON(http.StatusOK, getResponse(c, nil))")
 		g.P("\t}")
 		g.P("\tc.JSON(http.StatusOK, getResponse(c, resp))")
@@ -273,6 +275,7 @@ func (g *gin) setServiceMethodComment(serviceName, comments string) {
 func (g *gin) generateHelperFunc() {
 	g.P("// 返回数据格式化")
 	g.P("func getResponse(c *gin.Context, data interface{}) gin.H {")
+	g.P("\tresponseData := make(map[string]interface{})")
 	g.P("\tcode, ok := c.Get(\"code\")")
 	g.P("\tif !ok {")
 	g.P("\t\tcode = 0")
@@ -286,6 +289,7 @@ func (g *gin) generateHelperFunc() {
 	g.P("\tresponseData[\"data\"] = data")
 	g.P("\treturn responseData")
 	g.P("}")
+	g.P()
 }
 
 // 中间件
