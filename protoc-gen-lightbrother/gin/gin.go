@@ -47,10 +47,10 @@ func (g *gin) Generate(file *generator.FileDescriptor) {
 		return
 	}
 	g.Reset()
-	g.generateHeader(file)
 	fileName := filepath.Base(file.GetName())
 	g.filename = strings.ReplaceAll(fileName, filepath.Ext(fileName), "")
 	name := getFileName(file.GetName())
+	g.generateHeader(file)
 	//json, _ := json.Marshal(file)
 	//content := fmt.Sprint(string(json))
 	g.generateServiceRoute(file)
@@ -93,7 +93,7 @@ func (g *gin) generateHeader(file *generator.FileDescriptor) {
 	g.P()
 	g.P("// to suppressed 'imported but not used warning'")
 	g.P()
-	g.P("const HTTP_METGOD = \"GRPC\"")
+	g.P(fmt.Sprintf("const %s_HTTP_METGOD = \"GRPC\"", strings.ToUpper(g.filename)))
 	g.P()
 }
 
@@ -179,9 +179,9 @@ func (g *gin) generateRegister(file *generator.FileDescriptor, service *pb.Servi
 	for _, method := range methods {
 		methodMiddleware := g.getMethodMiddleware(service, method)
 		if methodMiddleware != "" {
-			g.P(fmt.Sprintf("\te.Handle(HTTP_METGOD, %s, %s, %s)", g.getRouteVariable(service, method), methodMiddleware, method.GetName()))
+			g.P(fmt.Sprintf("\te.Handle(%s_HTTP_METGOD, %s, %s, %s)", strings.ToUpper(g.filename), g.getRouteVariable(service, method), methodMiddleware, method.GetName()))
 		} else {
-			g.P(fmt.Sprintf("\te.Handle(HTTP_METGOD, %s, %s)", g.getRouteVariable(service, method), method.GetName()))
+			g.P(fmt.Sprintf("\te.Handle(%s_HTTP_METGOD, %s, %s)", strings.ToUpper(g.filename), g.getRouteVariable(service, method), method.GetName()))
 		}
 	}
 	g.P("}")
