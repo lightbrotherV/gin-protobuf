@@ -153,7 +153,7 @@ func (g *gin) generateHandleFunc(file *generator.FileDescriptor, service *pb.Ser
 	servName := generator.CamelCase(service.GetName())
 	for _, method := range methods {
 		g.P(fmt.Sprintf("func %s(c *gin.Context) {", method.GetName()))
-		g.P(fmt.Sprintf("\tp := new(%s)", g.gen.TypeName(g.objectNamed(method.GetOutputType()))))
+		g.P(fmt.Sprintf("\tp := new(%s)", g.gen.TypeName(g.objectNamed(method.GetInputType()))))
 		g.P("\tif err := c.BindJSON(p); err != nil {")
 		g.P("\t\tc.JSON(http.StatusInternalServerError, err)")
 		g.P("\t}")
@@ -161,9 +161,9 @@ func (g *gin) generateHandleFunc(file *generator.FileDescriptor, service *pb.Ser
 		g.P("\tif err != nil {")
 		g.P("\t\tc.Set(\"code\", -500)")
 		g.P("\t\tc.Set(\"message\", err.Error())")
-		g.P("\t\tc.JSON(http.StatusOK, getResponse(c, nil))")
+		g.P(fmt.Sprintf("\t\tc.JSON(http.StatusOK, get%sResponse(c, nil))",strings.Title(g.filename)))
 		g.P("\t}")
-		g.P("\tc.JSON(http.StatusOK, getResponse(c, resp))")
+		g.P(fmt.Sprintf("\tc.JSON(http.StatusOK, get%sResponse(c, resp))", strings.Title(g.filename)))
 		g.P("}")
 		g.P()
 	}
@@ -274,7 +274,7 @@ func (g *gin) setServiceMethodComment(serviceName, comments string) {
 
 func (g *gin) generateHelperFunc() {
 	g.P("// 返回数据格式化")
-	g.P("func getResponse(c *gin.Context, data interface{}) gin.H {")
+	g.P(fmt.Sprintf("func get%sResponse(c *gin.Context, data interface{}) gin.H {",strings.Title(g.filename)))
 	g.P("\tresponseData := make(map[string]interface{})")
 	g.P("\tcode, ok := c.Get(\"code\")")
 	g.P("\tif !ok {")
