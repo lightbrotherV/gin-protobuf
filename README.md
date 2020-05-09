@@ -56,6 +56,25 @@ information about protocol buffers themselves, see
     func RegisterCorsMiddleware(f gin.HandlerFunc);
 ```
 
+#### 指定http请求方法
+不指定http请求方法，就会默认使用GRPC方法，用method来指定http请求方法
+``` golang
+    // `method:"GET"`
+
+    // 同时指定中间件和请求方法如下
+    // `middleware:"auth" method:"GET"`
+```
+
+#### 忽略输入输出
+为了能够在websocket以及formData中适用，所以需要忽略输出以及输出，不将body中的数据映射成对应proto对象，使用方法如下：
+``` golang
+    // 忽略输入
+    // `hasOutput:"false"`
+
+    // 忽略输入
+    // `hasInput:"false"`
+```
+
 #### 返回结果
 通过gin框架的上下文gin.Context的Get,Set方法来传递参数。
 返回结构为：
