@@ -27,6 +27,8 @@ type gin struct {
 	serviceMethodRoutes map[string]string
 	*bytes.Buffer
 	methodMiddleware map[string][]string // 每个方法拥有的中间件
+	hasInput         map[string]bool     // 方法是否有输入
+	httpMethod       map[string]string   // http的请求方法
 	middlewarePool   []string            // 中间件池
 	filename         string
 }
@@ -40,6 +42,8 @@ func (g *gin) Init(gen *generator.Generator) {
 	g.Buffer = new(bytes.Buffer)
 	g.serviceMethodRoutes = make(map[string]string)
 	g.methodMiddleware = make(map[string][]string)
+	g.hasInput = make(map[string]bool)
+	g.httpMethod = make(map[string]string)
 }
 
 func (g *gin) Generate(file *generator.FileDescriptor) {
@@ -154,17 +158,19 @@ func (g *gin) generateHandleFunc(file *generator.FileDescriptor, service *pb.Ser
 	for _, method := range methods {
 		g.P(fmt.Sprintf("func %s(c *gin.Context) {", method.GetName()))
 		g.P(fmt.Sprintf("\tp := new(%s)", g.gen.TypeName(g.objectNamed(method.GetInputType()))))
-		g.P("\tif err := c.BindJSON(p); err != nil {")
-		g.P("\t\tc.Set(\"code\", -500)")
-		g.P("\t\tc.Set(\"message\", err.Error())")
-		g.P(fmt.Sprintf("\t\tc.JSON(http.StatusOK, get%sResponse(c, nil))",strings.Title(g.filename)))
-		g.P("\t\treturn")
-		g.P("\t}")
+		if g.getServiceHasInput(service.GetName(), method.GetName()) {
+			g.P("\tif err := c.BindJSON(p); err != nil {")
+			g.P("\t\tc.Set(\"code\", -500)")
+			g.P("\t\tc.Set(\"message\", err.Error())")
+			g.P(fmt.Sprintf("\t\tc.JSON(http.StatusOK, get%sResponse(c, nil))", strings.Title(g.filename)))
+			g.P("\t\treturn")
+			g.P("\t}")
+		}
 		g.P(fmt.Sprintf("\tresp, err := %s%sSvc.%s(c, p)", packageName, servName, generator.CamelCase(method.GetName())))
 		g.P("\tif err != nil {")
 		g.P("\t\tc.Set(\"code\", -500)")
 		g.P("\t\tc.Set(\"message\", err.Error())")
-		g.P(fmt.Sprintf("\t\tc.JSON(http.StatusOK, get%sResponse(c, nil))",strings.Title(g.filename)))
+		g.P(fmt.Sprintf("\t\tc.JSON(http.StatusOK, get%sResponse(c, nil))", strings.Title(g.filename)))
 		g.P("\t\treturn")
 		g.P("\t}")
 		g.P(fmt.Sprintf("\tc.JSON(http.StatusOK, get%sResponse(c, resp))", strings.Title(g.filename)))
@@ -182,10 +188,11 @@ func (g *gin) generateRegister(file *generator.FileDescriptor, service *pb.Servi
 	g.P(fmt.Sprintf("\t%s%sSvc = server", packageName, servName))
 	for _, method := range methods {
 		methodMiddleware := g.getMethodMiddleware(service, method)
+		httpMethod := g.getServiceHttpMethod(originServiceName, method.GetName())
 		if methodMiddleware != "" {
-			g.P(fmt.Sprintf("\te.Handle(%s_HTTP_METGOD, %s, %s, %s)", strings.ToUpper(g.filename), g.getRouteVariable(service, method), methodMiddleware, method.GetName()))
+			g.P(fmt.Sprintf("\te.Handle(%s, %s, %s, %s)", httpMethod, g.getRouteVariable(service, method), methodMiddleware, method.GetName()))
 		} else {
-			g.P(fmt.Sprintf("\te.Handle(%s_HTTP_METGOD, %s, %s)", strings.ToUpper(g.filename), g.getRouteVariable(service, method), method.GetName()))
+			g.P(fmt.Sprintf("\te.Handle(%s, %s, %s)", httpMethod, g.getRouteVariable(service, method), method.GetName()))
 		}
 	}
 	g.P("}")
@@ -261,8 +268,8 @@ func (g *gin) objectNamed(name string) generator.Object {
 // 从注释中提取记录服务各类参数
 func (g *gin) setServiceMethodComment(serviceName, comments string) {
 	tags := generator.GetTagsInComment(comments)
-	middlewareStr := generator.GetTagValue("middleware", tags)
 	// 中间件
+	middlewareStr := generator.GetTagValue("middleware", tags)
 	middlewareArr := strings.Split(middlewareStr, ",")
 	for _, middleware := range middlewareArr {
 		if middleware == "" {
@@ -274,11 +281,25 @@ func (g *gin) setServiceMethodComment(serviceName, comments string) {
 		// 加入对应的方法
 		g.methodMiddleware[serviceName] = append(g.methodMiddleware[serviceName], middleware)
 	}
+
+	// 是否有输入
+	hasInput := generator.GetTagValue("hasInput", tags)
+	if hasInput == "true" || hasInput == "" {
+		g.hasInput[serviceName] = true
+	} else {
+		g.hasInput[serviceName] = false
+	}
+
+	// 请求方法
+	httpMethod := generator.GetTagValue("method", tags)
+	if httpMethod != "" {
+		g.httpMethod[serviceName] = httpMethod
+	}
 }
 
 func (g *gin) generateHelperFunc() {
 	g.P("// 返回数据格式化")
-	g.P(fmt.Sprintf("func get%sResponse(c *gin.Context, data interface{}) gin.H {",strings.Title(g.filename)))
+	g.P(fmt.Sprintf("func get%sResponse(c *gin.Context, data interface{}) gin.H {", strings.Title(g.filename)))
 	g.P("\tresponseData := make(map[string]interface{})")
 	g.P("\tcode, ok := c.Get(\"code\")")
 	g.P("\tif !ok {")
@@ -372,6 +393,27 @@ func (g *gin) getMethodMiddleware(serv *pb.ServiceDescriptorProto, method *pb.Me
 
 func (g *gin) getMethodServiceKey(servName, methodName string) string {
 	return fmt.Sprintf("%s:%s", servName, methodName)
+}
+
+// 获取rpc的http请求方法
+func (g *gin) getServiceHttpMethod(servName, methodName string) string {
+	if mn := g.httpMethod[g.getMethodServiceKey(servName, methodName)]; mn != "" {
+		return "\"" + mn + "\""
+	}
+
+	if mn := g.httpMethod[servName]; mn != "" {
+		return "\"" + mn + "\""
+	}
+
+	return fmt.Sprintf("%s_HTTP_METGOD", strings.ToUpper(g.filename))
+}
+
+// 获取rpc是否有输入
+func (g *gin) getServiceHasInput(servName, methodName string) bool {
+	if !g.hasInput[g.getMethodServiceKey(servName, methodName)] || !g.hasInput[servName] {
+		return false
+	}
+	return true
 }
 
 // 稳定去除数组内相同的元素（set化）
