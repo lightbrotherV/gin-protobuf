@@ -21,9 +21,7 @@ information about protocol buffers themselves, see
 
 #### 安装
 ```
-    git clone https://github.com/lightbrotherV/gin-protobuf
-    cd gin-protobuf/protoc-gen-lightbrother
-    go install
+    go install github.com/lightbrotherV/gin-protobuf/protoc-gen-lightbrother@v1.0.4
 ```
 #### 使用命令
 ```
